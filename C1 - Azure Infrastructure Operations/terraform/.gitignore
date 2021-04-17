@@ -1,0 +1,7 @@
+.envrc
+.tool-versions
+.terraform/*
+*.tfstate
+*.tfstate.*
+tf
+tf.pub
