@@ -37,6 +37,12 @@ az policy assignment list
 ```
 #### Create a Packer image
 
+First let's create a resource group named `udacity-demo-rg`.
+
+```bash
+az group create --name udacity-demo-rg --location eastus
+```
+
 Packer builds images by taking a base image and installing additional software on it.
 
 To use Packer with Azure, you must [create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli) with the Azure CLI.
@@ -45,7 +51,7 @@ To use a service principal you must specify `subscription_id`, `client_id`, `ten
 
 ##### Packer Configuration Files
 
-Copy a `.envrc-local` file to `.envrc` file in packer folder. This file is bash code that is going to be loaded by a shell script. To configure Packer to use your Service Principals information and set the following environment variables.
+We can pass the credentials at the command line, include them in a variables file, or add them as environment variables, as seen below.
 
 ```bash
 export ARM_CLIENT_ID=<<<ARM_CLIENT_ID>>>
@@ -54,9 +60,13 @@ export ARM_SUBSCRIPTION_ID=<<<ARM_SUBSCRIPTION_ID>>>
 export ARM_TENANT_ID=<<<ARM_TENANT_ID>>>
 ```
 
-Create an image resource group named `udacity-demo-rg`.
+With the Azure credentials set, we can now build our Azure image by running the packer build command and providing the name of the template file.
 
-Create the image using Packer.
+```bash
+packer build server.json
+```
+
+Alternatively we can also create the image using the provided shell script
 
 ```bash
 cd packer
@@ -66,9 +76,11 @@ cd packer
 
 #### Deploy Azure resources with Terraform
 
-##### Terraform Configuration Files
+##### Set environment variables
 
-Copy a `.envrc-local` file to `.envrc` file in terraform folder. This file is bash code that is going to be loaded by a shell script. To configure Terraform to use your Service Principals information and set the following environment variables.
+Setting environment variables helps Terraform use the intended Azure subscription without you having to insert the information in every Terraform configuration file.
+
+To set the environment variables for every shell instance, create the following environment variables. Replace the placeholders with the appropriate values for your environment.
 
 ```bash
 export ARM_CLIENT_ID=<<<ARM_CLIENT_ID>>>
@@ -77,14 +89,40 @@ export ARM_SUBSCRIPTION_ID=<<<ARM_SUBSCRIPTION_ID>>>
 export ARM_TENANT_ID=<<<ARM_TENANT_ID>>>
 ```
 
-Create a local SSH key
+##### Create a local SSH key
 
 ```bash
 cd terraform
 ssh-keygen -t rsa -C "Terraform" -f ./tf
 ```
 
-To Provision infrastructure using Terraform run `./provision-infra.sh` script.
+##### Create and apply a Terraform execution plan
+
+To initialize the Terraform deployment, run `terraform init`. This command downloads the Azure modules required to create an Azure resource group.
+
+```bash
+terraform init
+```
+
+After initialization, we create an execution plan by running `terraform plan` while providing input variables.
+
+```bash
+terraform plan -var "public_ssh_key=./tf.pub" -out=solution.plan
+```
+
+Once we're ready to apply the execution plan to our cloud infrastructure, we run `terraform apply`.
+
+```bash
+terraform apply solution.plan
+```
+
+Alternatively we can also provision infrastructure using the provided shell script.
+
+```bash
+cd terraform
+# Run the shell script
+./provision-infra.sh
+```
 
 #### Destroy all Azure resources once you don't need them
 
